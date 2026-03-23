@@ -140,6 +140,24 @@ pub enum EventStatus {
     Completed = 2,
 }
 
+/// Represents the type of a ticket.
+/// Standard is the default type.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[repr(u32)]
+pub enum TicketType {
+    /// Standard ticket for general access.
+    Standard = 0,
+    /// VIP ticket for premium access.
+    VIP = 1,
+}
+
+impl Default for TicketType {
+    fn default() -> Self {
+        TicketType::Standard
+    }
+}
+
 #[contracttype]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CampaignMetrics {
@@ -413,5 +431,10 @@ mod tests {
         let val: Val = status.into_val(&env);
         let deserialized: EventStatus = EventStatus::from_val(&env, &val);
         assert_eq!(status, deserialized);
+    }
+
+    #[test]
+    fn ticket_type_default_is_standard() {
+        assert_eq!(TicketType::default(), TicketType::Standard);
     }
 }
