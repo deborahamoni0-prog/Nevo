@@ -1,8 +1,8 @@
 #![cfg(test)]
 
-use soroban_sdk::{testutils::Address as _, Address, Env, String, BytesN, IntoVal};
-use soroban_sdk::token;
 use crate::crowdfunding::{CrowdfundingContract, CrowdfundingContractClient};
+use soroban_sdk::token;
+use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, IntoVal, String};
 
 fn create_client() -> (Env, CrowdfundingContractClient<'static>) {
     let env = Env::default();
