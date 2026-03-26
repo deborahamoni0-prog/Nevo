@@ -39,6 +39,7 @@ pub struct PoolConfig {
     pub is_private: bool,
     pub duration: u64,
     pub created_at: u64,
+    pub token_address: Address,
 }
 
 #[contracttype]
@@ -138,6 +139,17 @@ pub enum EventStatus {
     Active = 0,
     Cancelled = 1,
     Completed = 2,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EventDetails {
+    pub id: u64,
+    pub title: String,
+    pub creator: Address,
+    pub ticket_price: i128,
+    pub max_attendees: u32,
+    pub deadline: u64,
 }
 
 /// Represents the type of a ticket.
@@ -276,16 +288,19 @@ pub enum StorageKey {
     EventPool(u64),
     // Per-pool revenue split: tokens accumulated as platform fee
     EventPlatformFees(u64),
+    // Track if someone bought a ticket
+    UserTicket(u64, Address),
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::Env;
+    use soroban_sdk::{testutils::Address as _, Address, Env};
 
     #[test]
     fn pool_config_validation_success() {
         let env = Env::default();
+        let token = Address::generate(&env);
         let cfg = PoolConfig {
             name: String::from_str(&env, "Education Fund"),
             description: String::from_str(&env, "Fund for student education materials"),
@@ -294,6 +309,7 @@ mod tests {
             is_private: false,
             duration: 30 * 24 * 60 * 60,
             created_at: 1,
+            token_address: token,
         };
 
         cfg.validate();
@@ -303,6 +319,7 @@ mod tests {
     #[should_panic]
     fn pool_config_invalid_target_amount_panics() {
         let env = Env::default();
+        let token = Address::generate(&env);
         let cfg = PoolConfig {
             name: String::from_str(&env, "Invalid Target"),
             description: String::from_str(&env, "Description"),
@@ -311,6 +328,7 @@ mod tests {
             is_private: false,
             duration: 30 * 24 * 60 * 60,
             created_at: 1,
+            token_address: token,
         };
 
         cfg.validate();
@@ -437,5 +455,25 @@ mod tests {
     #[test]
     fn ticket_type_default_is_standard() {
         assert_eq!(TicketType::default(), TicketType::Standard);
+    }
+
+    #[test]
+    fn event_details_instantiation() {
+        use soroban_sdk::testutils::Address as _;
+        let env = Env::default();
+        let creator = soroban_sdk::Address::generate(&env);
+        let event = EventDetails {
+            id: 1,
+            title: String::from_str(&env, "Nevo Launch"),
+            creator: creator.clone(),
+            ticket_price: 500,
+            max_attendees: 100,
+            deadline: 1_700_000_000,
+        };
+        assert_eq!(event.id, 1);
+        assert_eq!(event.ticket_price, 500);
+        assert_eq!(event.max_attendees, 100);
+        assert_eq!(event.deadline, 1_700_000_000);
+        assert_eq!(event.creator, creator);
     }
 }

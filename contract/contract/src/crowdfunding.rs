@@ -906,8 +906,15 @@ impl CrowdfundingTrait for CrowdfundingContract {
         // Validate config
         config.validate();
 
-        // Extra validation (if any, e.g. duration checks not covered by validate)
-        // For now relying on PoolConfig::validate
+        // Validate that the provided token matches the platform's accepted token
+        let token_key = StorageKey::CrowdfundingToken;
+        if !env.storage().instance().has(&token_key) {
+            return Err(CrowdfundingError::NotInitialized);
+        }
+        let platform_token: Address = env.storage().instance().get(&token_key).unwrap();
+        if config.token_address != platform_token {
+            return Err(CrowdfundingError::InvalidToken);
+        }
 
         // Generate unique pool ID
         let next_id_key = StorageKey::NextPoolId;
@@ -1040,6 +1047,13 @@ impl CrowdfundingTrait for CrowdfundingContract {
         let now = env.ledger().timestamp();
         let duration = deadline.saturating_sub(now);
 
+        // Get the platform token for the pool config
+        let platform_token: Address = env
+            .storage()
+            .instance()
+            .get(&StorageKey::CrowdfundingToken)
+            .unwrap_or(creator.clone());
+
         // Create pool configuration (persistent view)
         let pool_config = PoolConfig {
             name: name.clone(),
@@ -1049,6 +1063,7 @@ impl CrowdfundingTrait for CrowdfundingContract {
             is_private: false,
             duration,
             created_at: now,
+            token_address: platform_token,
         };
 
         // Store pool configuration
@@ -1875,6 +1890,18 @@ impl CrowdfundingTrait for CrowdfundingContract {
 
         Ok(result)
     }
+
+    fn upgrade_contract(env: Env, new_wasm_hash: BytesN<32>) -> Result<(), CrowdfundingError> {
+        let admin: Address = env
+            .storage()
+            .instance()
+            .get(&StorageKey::Admin)
+            .ok_or(CrowdfundingError::NotInitialized)?;
+        admin.require_auth();
+
+        env.deployer().update_current_contract_wasm(new_wasm_hash);
+        Ok(())
+    }
 }
 
 impl CrowdfundingContract {
@@ -1905,6 +1932,21 @@ impl SecondCrowdfundingTrait for CrowdfundingContract {
     ) -> Result<(), SecondCrowdfundingError> {
         Self::validate_string_length(&title)?;
         let _ = env; // env available for future use
+        Ok(())
+    }
+
+    fn create_event(
+        env: Env,
+        _id: BytesN<32>,
+        title: String,
+        _creator: Address,
+        _ticket_price: i128,
+        _max_attendees: u32,
+        _deadline: u64,
+        _token: Address,
+    ) -> Result<(), SecondCrowdfundingError> {
+        Self::validate_string_length(&title)?;
+        let _ = env;
         Ok(())
     }
 }

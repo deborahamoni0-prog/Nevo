@@ -20,6 +20,7 @@ pub fn campaign_goal_updated(env: &Env, id: BytesN<32>, new_goal: i128) {
     env.events().publish(topics, new_goal);
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn pool_created(
     env: &Env,
     pool_id: u64,

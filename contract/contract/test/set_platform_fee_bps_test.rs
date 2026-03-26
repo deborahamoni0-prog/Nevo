@@ -100,7 +100,7 @@ fn test_set_platform_fee_bps_non_admin_fails() {
     let non_admin = Address::generate(&env);
 
     // Only mock auth for the non-admin — the contract should reject it
-    client
+    let _ = client
         .mock_auths(&[MockAuth {
             address: &non_admin,
             invoke: &MockAuthInvoke {
